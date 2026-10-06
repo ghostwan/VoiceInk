@@ -112,7 +112,8 @@ struct HistoryView: View {
                         guard detailTranscription?.id == transcription.id else { return }
                         isShowingInfo = false
                         detailTranscription = updated
-                    }
+                    },
+                    onDelete: { deleteSelectedTranscriptions(or: transcription) }
                 )
                 .transition(.opacity)
             }
@@ -363,11 +364,15 @@ struct HistoryView: View {
         modelContext.delete(transcription)
     }
 
-    private func deleteSelectedTranscriptions() {
-        for transcription in selectedTranscriptions {
-            performDeletion(for: transcription)
+    private func deleteSelectedTranscriptions(or single: Transcription? = nil) {
+        if let single {
+            performDeletion(for: single)
+        } else {
+            for transcription in selectedTranscriptions {
+                performDeletion(for: transcription)
+            }
+            selectedTranscriptions.removeAll()
         }
-        selectedTranscriptions.removeAll()
 
         Task {
             do {

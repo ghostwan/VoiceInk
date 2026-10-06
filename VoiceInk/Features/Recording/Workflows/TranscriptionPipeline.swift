@@ -54,6 +54,7 @@ class TranscriptionPipeline {
         transcriptionConfiguration: TranscriptionRuntimeConfiguration,
         formattingConfiguration resolveFormattingConfiguration: @escaping () -> TranscriptionFormattingConfiguration,
         session: TranscriptionSession?,
+        speakerCapture: SpeakerSession.Capture? = nil,
         triggerWordModeSelection: @escaping (String) -> String? = { _ in nil },
         enhancementConfiguration: @escaping () -> EnhancementRuntimeConfiguration?,
         recordingContextSnapshot: @escaping () async -> RecordingContextSnapshot? = { nil },
@@ -102,7 +103,21 @@ class TranscriptionPipeline {
         do {
             let transcriptionStart = Date()
             var text: String
-            if let session {
+            if let speakerCapture, !assistant.isFollowUp {
+                session?.cancel()
+                text = try await SpeakerTranscriber.transcribe(
+                    micURL: audioURL,
+                    capture: speakerCapture,
+                    shouldCancel: shouldCancel,
+                    transcribeSegment: { url in
+                        try await serviceRegistry.transcribe(
+                            audioURL: url,
+                            model: model,
+                            context: transcriptionConfiguration.requestContext
+                        )
+                    }
+                )
+            } else if let session {
                 text = try await session.transcribe(audioURL: audioURL)
             } else {
                 text = try await serviceRegistry.transcribe(

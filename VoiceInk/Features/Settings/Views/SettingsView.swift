@@ -24,6 +24,8 @@ struct SettingsView: View {
     @AppStorage(AppLanguagePreference.userDefaultsKey) private var appLanguagePreference = AppLanguagePreference
         .systemValue
     @AppStorage(RecorderDisplaySettingsKeys.showLiveTranscript) private var showLiveTranscript = true
+    @AppStorage(SpeakerSettings.askParticipantsKey) private var askParticipants = false
+    @AppStorage(SpeakerSettings.captureRemoteKey) private var captureRemoteAudio = false
     @AppStorage(FinishAndSendSettings.key) private var finishAndSendKey = FinishAndSendKey.none.rawValue
     @State private var showResetOnboardingAlert = false
     @State private var showLanguageRestartAlert = false
@@ -219,6 +221,23 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.menu)
+
+                Toggle(isOn: $askParticipants) {
+                    HStack(spacing: 4) {
+                        Text("Ask for Participants Before Recording")
+                        InfoTip("Prompts for participant names before each recording, then lets you pick the active speaker during recording to label the transcription.")
+                    }
+                }
+
+                Toggle(isOn: $captureRemoteAudio) {
+                    HStack(spacing: 4) {
+                        Text("Capture Remote Audio (Teams, Zoom…)")
+                        InfoTip("Records system audio separately from your microphone to label remote speakers automatically. Requires Screen Recording permission.")
+                    }
+                }
+                .onChange(of: captureRemoteAudio) { _, enabled in
+                    if enabled { Task { _ = await ScreenCaptureService.requestScreenCapturePermissionRegistration() } }
+                }
 
                 Toggle(isOn: $showLiveTranscript) {
                     HStack(spacing: 4) {

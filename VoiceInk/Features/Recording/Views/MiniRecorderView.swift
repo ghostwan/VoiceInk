@@ -4,6 +4,7 @@ struct MiniRecorderView<S: RecorderStateProvider & ObservableObject>: View {
     @ObservedObject var stateProvider: S
     @ObservedObject var recorder: Recorder
     @ObservedObject var assistantSession: AssistantSession
+    @ObservedObject private var speakerSession = SpeakerSession.shared
     let onRecordButtonTapped: () -> Void
     let onCloseTapped: () -> Void
     let onAssistantFollowUp: (String) -> Void
@@ -70,8 +71,16 @@ struct MiniRecorderView<S: RecorderStateProvider & ObservableObject>: View {
         .frame(height: controlBarHeight)
     }
 
+    private var showSpeakerChips: Bool {
+        speakerSession.isActive && stateProvider.recordingState == .recording
+    }
+
     private var transcriptSection: some View {
         VStack(spacing: 0) {
+            if showSpeakerChips {
+                SpeakerChipsBar(session: speakerSession)
+                Divider().background(Color.white.opacity(0.15))
+            }
             if hasLiveTranscript {
                 LiveTranscriptView(text: stateProvider.partialTranscript)
                 Divider().background(Color.white.opacity(0.15))
@@ -93,7 +102,7 @@ struct MiniRecorderView<S: RecorderStateProvider & ObservableObject>: View {
             }
             controlBar
         }
-        .frame(width: hasAssistantResponse ? assistantWidth : (hasLiveTranscript ? expandedWidth : compactWidth))
+        .frame(width: hasAssistantResponse ? assistantWidth : ((hasLiveTranscript || showSpeakerChips) ? expandedWidth : compactWidth))
         .background(Color.black)
         .clipShape(
             RoundedRectangle(
@@ -101,6 +110,7 @@ struct MiniRecorderView<S: RecorderStateProvider & ObservableObject>: View {
                 style: .continuous)
         )
         .animation(.easeInOut(duration: 0.3), value: hasLiveTranscript)
+        .animation(.easeInOut(duration: 0.3), value: showSpeakerChips)
         .animation(.easeInOut(duration: 0.3), value: hasAssistantResponse)
         .gesture(WindowDragGesture())
         .allowsWindowActivationEvents()

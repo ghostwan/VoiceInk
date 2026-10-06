@@ -187,6 +187,7 @@ class VoiceInkEngine: NSObject, ObservableObject {
             activeRecordingStartID = nil
             partialTranscript = ""
             recordingState = .transcribing
+            pendingSpeakerCapture = await SpeakerSession.shared.finish()
             await recorder.stopRecording()
 
             if let recordedFile {
@@ -277,6 +278,7 @@ class VoiceInkEngine: NSObject, ObservableObject {
                             }
 
                             self.recordingState = .recording
+                            SpeakerSession.shared.beginRecording()
 
                             // Only retire the previous paste session once recording
                             // has actually started. Preflight/permission failures
@@ -527,6 +529,8 @@ class VoiceInkEngine: NSObject, ObservableObject {
 
     // MARK: - Pipeline Dispatch
 
+    private var pendingSpeakerCapture: SpeakerSession.Capture?
+
     private func runPipeline(
         on transcription: Transcription,
         audioURL: URL,
@@ -557,6 +561,7 @@ class VoiceInkEngine: NSObject, ObservableObject {
                 ModeRuntimeResolver.transcriptionFormattingConfiguration()
             },
             session: session,
+            speakerCapture: { let c = pendingSpeakerCapture; pendingSpeakerCapture = nil; return c }(),
             triggerWordModeSelection: { [weak self] text in
                 self?.selectTriggerWordModeIfNeeded(for: text)
             },
@@ -682,6 +687,8 @@ class VoiceInkEngine: NSObject, ObservableObject {
     }
 
     func resetRecordingSession() async {
+        SpeakerSession.shared.reset()
+        pendingSpeakerCapture = nil
         cancelCurrentSession()
         activeRecordingStartID = nil
         activePipelineTranscriptionID = nil

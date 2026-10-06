@@ -242,6 +242,11 @@ class RecorderUIManager: ObservableObject, RecorderPanelPresenting {
                 await dismissRecorderPanel()
             }
         } else {
+            if UserDefaults.standard.bool(forKey: SpeakerSettings.askParticipantsKey) {
+                guard SpeakerSession.promptForParticipants() else { return }
+            } else {
+                SpeakerSession.shared.reset()
+            }
             SoundManager.shared.playStartSound()
             isRecorderPanelVisible = true
             await engine.toggleRecord(modeId: modeId)

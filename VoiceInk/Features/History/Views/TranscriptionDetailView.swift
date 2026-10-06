@@ -12,6 +12,9 @@ struct TranscriptionDetailView: View {
     let onTranscriptionUpdated: (Transcription) -> Void
     var presentation: HistoryDetailPresentation = .mainWindow
     var onPaste: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
+
+    @State private var showDeleteConfirmation = false
 
     private var audioURL: URL? { transcription.availableHistoryAudioURL }
     private var playbackURL: URL? { presentation == .mainWindow ? audioURL : nil }
@@ -60,6 +63,25 @@ struct TranscriptionDetailView: View {
                 .font(.system(size: 14, weight: .semibold))
 
             Spacer()
+
+            if onDelete != nil {
+                Button {
+                    showDeleteConfirmation = true
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+                .buttonStyle(.plain)
+                .help("Delete this transcription")
+                .accessibilityLabel("Delete this transcription")
+                .alert("Delete Transcription?", isPresented: $showDeleteConfirmation) {
+                    Button("Delete", role: .destructive) { onDelete?() }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("This action cannot be undone.")
+                }
+            }
 
             if presentation == .quickPanel {
                 HistoryWindowDragArea()

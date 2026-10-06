@@ -38,6 +38,23 @@ final class QuickHistoryViewModel: ObservableObject {
         load(query: searchText.trimmingCharacters(in: .whitespacesAndNewlines), selecting: transcription.id)
     }
 
+    func delete(_ transcription: Transcription) {
+        if let url = transcription.availableHistoryAudioURL {
+            try? FileManager.default.removeItem(at: url)
+        }
+        isShowingInfo = false
+        isShowingDetail = false
+        transcriptions.removeAll { $0.id == transcription.id }
+        modelContext.delete(transcription)
+        do {
+            try modelContext.save()
+            NotificationCenter.default.post(name: .transcriptionDeleted, object: nil)
+        } catch {
+            print("Error saving deletion: \(error.localizedDescription)")
+        }
+        reload()
+    }
+
     func clearSearch() {
         searchText = ""
     }
