@@ -4,12 +4,14 @@ enum ModeOutputMode: String, Codable, CaseIterable {
     case paste
     case respond
     case customCommand
+    case background
 
     var displayName: String {
         switch self {
         case .paste: return String(localized: "Paste")
         case .respond: return String(localized: "Respond")
         case .customCommand: return String(localized: "Custom Command")
+        case .background: return String(localized: "Background (notify)")
         }
     }
 
@@ -18,11 +20,12 @@ enum ModeOutputMode: String, Codable, CaseIterable {
         case .paste: return "doc.on.clipboard"
         case .respond: return "text.bubble"
         case .customCommand: return "terminal"
+        case .background: return "bell.badge"
         }
     }
 
     static func choices(canRespond: Bool) -> [ModeOutputMode] {
-        canRespond ? [.paste, .respond, .customCommand] : [.paste, .customCommand]
+        canRespond ? [.paste, .respond, .customCommand, .background] : [.paste, .customCommand, .background]
     }
 }
 

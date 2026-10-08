@@ -202,12 +202,22 @@ class VoiceInkEngine: NSObject, ObservableObject {
                     try? modelContext.save()
                     NotificationCenter.default.post(name: .transcriptionCreated, object: transcription)
 
-                    await runPipeline(
-                        on: transcription,
-                        audioURL: recordedFile,
-                        contextStore: activeRecordingContextStore,
-                        sendAfterPaste: sendAfterPaste
-                    )
+                    if !activePipelineUseCase.isAssistantFollowUp,
+                        ModeRuntimeResolver.outputConfiguration().outputMode == .background
+                    {
+                        await startBackgroundPipeline(
+                            on: transcription,
+                            audioURL: recordedFile,
+                            contextStore: activeRecordingContextStore
+                        )
+                    } else {
+                        await runPipeline(
+                            on: transcription,
+                            audioURL: recordedFile,
+                            contextStore: activeRecordingContextStore,
+                            sendAfterPaste: sendAfterPaste
+                        )
+                    }
                 } else {
                     await finishActiveRecorderCancellation()
                 }
@@ -530,6 +540,79 @@ class VoiceInkEngine: NSObject, ObservableObject {
     // MARK: - Pipeline Dispatch
 
     private var pendingSpeakerCapture: SpeakerSession.Capture?
+
+    private var backgroundJobCount = 0
+
+    /// Detaches the pipeline so the recorder is immediately free for the next recording.
+    private func startBackgroundPipeline(
+        on transcription: Transcription,
+        audioURL: URL,
+        contextStore: RecordingContextSnapshotStore?
+    ) async {
+        let configuration =
+            currentSessionTranscriptionConfiguration
+            ?? ModeRuntimeResolver.transcriptionConfiguration(transcriptionModelManager: transcriptionModelManager)
+        guard let configuration else {
+            transcription.text = String(localized: "Transcription Failed: No model selected")
+            transcription.transcriptionStatus = TranscriptionStatus.failed.rawValue
+            try? modelContext.save()
+            recordingState = .idle
+            activePipelineUseCase = .newSession
+            return
+        }
+
+        let session = currentSession
+        let speakerCapture = pendingSpeakerCapture
+        pendingSpeakerCapture = nil
+        let formatting = ModeRuntimeResolver.transcriptionFormattingConfiguration()
+        let output = ModeRuntimeResolver.outputConfiguration()
+        var enhancement: EnhancementRuntimeConfiguration?
+        if let enhancementService, let aiService = enhancementService.getAIService() {
+            enhancement = ModeRuntimeResolver.currentEnhancementConfiguration(
+                enhancementService: enhancementService, aiService: aiService)
+        }
+        let transcriptionID = transcription.id
+
+        // Release the engine so a new recording can start right away.
+        currentSession = nil
+        currentSessionTranscriptionConfiguration = nil
+        recordedFile = nil
+        activePipelineUseCase = .newSession
+        recordingState = .idle
+        await recorderUIManager?.dismissRecorderPanel()
+
+        backgroundJobCount += 1
+        let pipeline = self.pipeline
+        Task { @MainActor [weak self] in
+            await pipeline.run(
+                transcription: transcription,
+                audioURL: audioURL,
+                transcriptionConfiguration: configuration,
+                formattingConfiguration: { formatting },
+                session: session,
+                speakerCapture: speakerCapture,
+                enhancementConfiguration: { enhancement },
+                recordingContextSnapshot: {
+                    await MainActor.run { contextStore?.snapshot }
+                },
+                outputConfiguration: { output },
+                onStateChange: { _ in },
+                shouldCancel: { [weak self] in
+                    self?.canceledPipelineTranscriptionIDs.contains(transcriptionID) ?? false
+                },
+                onCancel: { [weak self, session] in
+                    self?.cancelPipelineSession(transcriptionID: transcriptionID, session: session)
+                },
+                onDismiss: {}
+            )
+            guard let self else { return }
+            self.canceledPipelineTranscriptionIDs.remove(transcriptionID)
+            self.backgroundJobCount -= 1
+            if self.backgroundJobCount == 0, self.recordingState == .idle {
+                await self.cleanupResources()
+            }
+        }
+    }
 
     private func runPipeline(
         on transcription: Transcription,
@@ -869,6 +952,10 @@ class VoiceInkEngine: NSObject, ObservableObject {
     }
 
     func cleanupResources() async {
+        guard backgroundJobCount == 0 else {
+            logger.notice("cleanupResources: skipped, background transcription running")
+            return
+        }
         logger.notice("cleanupResources: releasing model resources")
         activeRecordingStartID = nil
         activeRecordingUseCase = .newSession

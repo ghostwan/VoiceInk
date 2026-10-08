@@ -41,6 +41,11 @@ final class TranscriptionDelivery {
             return
         }
 
+        if request.output.outputMode == .background {
+            await deliverBackground(request, actions: actions)
+            return
+        }
+
         if request.output.outputMode == .customCommand {
             await deliverCustomCommand(request, actions: actions)
             return
@@ -78,6 +83,22 @@ final class TranscriptionDelivery {
         } else {
             await actions.failResponse("No response was generated.")
         }
+    }
+
+    private func deliverBackground(_ item: Request, actions: Actions) async {
+        await actions.dismiss()
+        guard let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return }
+        SoundManager.shared.playStopSound()
+        let preview = text.count > 80 ? String(text.prefix(80)) + "…" : text
+        NotificationManager.shared.showNotification(
+            title: String(format: String(localized: "Transcription ready: %@"), preview),
+            type: .success,
+            duration: 8.0,
+            actionButton: (
+                label: String(localized: "Copy"),
+                action: { _ = ClipboardManager.copyToClipboard(text) }
+            )
+        )
     }
 
     private func deliverCustomCommand(_ item: Request, actions: Actions) async {

@@ -30,6 +30,7 @@ final class Transcription {
     @Attribute(originalName: "powerModeEmoji")
     var modeEmoji: String?
     var transcriptionStatus: String?
+    var isProcessed: Bool = false
 
     init(
         text: String,

@@ -1,3 +1,4 @@
+import SwiftData
 import AppKit
 import SwiftUI
 
@@ -104,6 +105,7 @@ struct HistoryTranscriptionRow: View {
     var showsCopyButton = false
 
     @State private var isHovered = false
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         HStack(spacing: 12) {
@@ -121,6 +123,8 @@ struct HistoryTranscriptionRow: View {
             }
 
             rowAction
+
+            ProcessedToggleButton(transcription: transcription, modelContext: modelContext)
 
             if showsCopyButton {
                 CopyIconButton(
@@ -294,5 +298,24 @@ struct HistoryWindowDragArea: NSViewRepresentable {
         override func mouseDown(with event: NSEvent) {
             window?.performDrag(with: event)
         }
+    }
+}
+
+struct ProcessedToggleButton: View {
+    let transcription: Transcription
+    let modelContext: ModelContext
+
+    var body: some View {
+        Button {
+            transcription.isProcessed.toggle()
+            try? modelContext.save()
+        } label: {
+            Image(systemName: transcription.isProcessed ? "checkmark.circle.fill" : "checkmark.circle")
+                .font(.system(size: 14))
+                .foregroundStyle(transcription.isProcessed ? Color.green : AppTheme.Text.muted)
+        }
+        .buttonStyle(.plain)
+        .help(transcription.isProcessed ? "Mark as not processed" : "Mark as processed")
+        .accessibilityLabel(transcription.isProcessed ? "Mark as not processed" : "Mark as processed")
     }
 }

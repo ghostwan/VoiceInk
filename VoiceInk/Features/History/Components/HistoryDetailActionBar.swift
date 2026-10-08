@@ -47,6 +47,8 @@ struct HistoryDetailActionBar: View {
             promptButton
             retryButton
             finderButton
+            processedButton
+            shareButton
             infoButton
             Spacer(minLength: 8)
             textActionButton
@@ -151,6 +153,29 @@ struct HistoryDetailActionBar: View {
             )
         }
         .disabled(audioURL == nil)
+    }
+
+    private var processedButton: some View {
+        HistoryIconButton(
+            systemName: transcription.isProcessed ? "checkmark.circle.fill" : "checkmark.circle",
+            help: transcription.isProcessed ? "Mark as not processed" : "Mark as processed",
+            isSelected: transcription.isProcessed
+        ) {
+            transcription.isProcessed.toggle()
+            try? modelContext.save()
+        }
+    }
+
+    private var shareButton: some View {
+        ShareLink(item: transcription.preferredHistoryText) {
+            Image(systemName: "square.and.arrow.up")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(AppTheme.Text.secondary)
+                .frame(width: 34, height: HistoryLayout.buttonHeight)
+                .background(QuickPanelButtonBackground())
+        }
+        .buttonStyle(.plain)
+        .help("Open in another app")
     }
 
     private var infoButton: some View {

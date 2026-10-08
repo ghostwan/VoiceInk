@@ -13525,7 +13525,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Histoire"
+            "value" : "Historique"
           }
         },
         "zh-Hans" : {
@@ -24135,9 +24135,7 @@
         }
       }
     },
-    "Skip" : {
-
-    },
+    "Skip" : {},
     "Skip API Setup" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24161,9 +24159,7 @@
         }
       }
     },
-    "Skip onboarding" : {
-
-    },
+    "Skip onboarding" : {},
     "Skip short transcriptions" : {
       "localizations" : {
         "de" : {
@@ -24186,9 +24182,7 @@
         }
       }
     },
-    "Skip the remaining onboarding steps" : {
-
-    },
+    "Skip the remaining onboarding steps" : {},
     "Skipped %lld duplicate, conflicting, invalid, or cyclic entries." : {
       "localizations" : {
         "de" : {
@@ -30810,6 +30804,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的字数和基准对比会显示在这里。"
+          }
+        }
+      }
+    },
+    "Background (notify)" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrière-plan (notification)"
+          }
+        }
+      }
+    },
+    "Transcription ready: %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcription terminée : %@"
+          }
+        }
+      }
+    },
+    "Mark as processed" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer comme traité"
+          }
+        }
+      }
+    },
+    "Mark as not processed" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer comme non traité"
+          }
+        }
+      }
+    },
+    "Open in another app" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir dans une autre app"
+          }
+        }
+      }
+    },
+    "Delete this transcription" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer cette transcription"
+          }
+        }
+      }
+    },
+    "Ask for Participants Before Recording" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander les participants avant l'enregistrement"
+          }
+        }
+      }
+    },
+    "Who is taking part?" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui participe ?"
           }
         }
       }
